@@ -1,0 +1,253 @@
+@page "/"
+@rendermode InteractiveServer
+
+<style>
+    @@keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+        100% { transform: translateY(0px); }
+    }
+
+    @@keyframes heartPop {
+        0% { 
+            transform: scale(0) translateY(0);
+            opacity: 1;
+        }
+        50% { 
+            transform: scale(1.2) translateY(-20px);
+            opacity: 0.8;
+        }
+        100% { 
+            transform: scale(1) translateY(-40px);
+            opacity: 0;
+        }
+    }
+
+    .floating-heart {
+        position: absolute;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    .heart-pop {
+        position: absolute;
+        animation: heartPop 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        pointer-events: none;
+    }
+
+    .valentine-font {
+        font-family: 'Pacifico', cursive;
+    }
+
+    .button-hover {
+        transition: all 0.3s ease;
+    }
+    
+    .button-hover:hover {
+        transform: scale(1.1);
+    }
+
+    @@keyframes wind {
+        0% { transform: translateX(-100%) skewX(-15deg); }
+        100% { transform: translateX(100%) skewX(-15deg); }
+    }
+
+    .wind-particle {
+        position: absolute;
+        background: rgba(128, 128, 128, 0.2);
+        height: 2px;
+        animation: wind 5s linear infinite;
+    }
+
+    .sad-background {
+        background: linear-gradient(to bottom right, #2d3436, #636e72);
+        transition: all 1s ease;
+    }
+
+.happy-background {
+    background: linear-gradient(135deg, #d8b4fe, #f0abfc, #f9a8d4);
+    transition: all 1s ease;
+}
+
+    .sad-font {
+        font-family: 'Times New Roman', serif;
+        color: #gray-700;
+    }
+</style>
+
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+</head>
+
+<div class="min-h-screen @(IsSadMode ? "sad-background" : "happy-background") flex items-center justify-center overflow-hidden relative">
+    <!-- Conditional floating elements -->
+    @if (!IsSadMode)
+    {
+        @for (var i = 0; i < 10; i++)
+        {
+            <div class="floating-heart text-pink-400 opacity-30" 
+                 style="left: @($"{Random.Shared.Next(0, 100)}%"); top: @($"{Random.Shared.Next(0, 100)}%"); animation-delay: @($"{Random.Shared.Next(0, 5)}s")">
+                ❤️
+            </div>
+        }
+    }
+    else
+    {
+        @for (var i = 0; i < 10; i++)
+        {
+            <div class="floating-heart text-gray-600 opacity-30" 
+                 style="left: @($"{Random.Shared.Next(0, 100)}%"); top: @($"{Random.Shared.Next(0, 100)}%"); animation-delay: @($"{Random.Shared.Next(0, 5)}s")">
+                💀
+            </div>
+        }
+        @for (var i = 0; i < 20; i++)
+        {
+            <div class="wind-particle"
+                 style="top: @($"{Random.Shared.Next(0, 100)}%"); width: @($"{Random.Shared.Next(50, 200)}px"); animation-delay: @($"{Random.Shared.Next(0, 5)}s")">
+            </div>
+        }
+    }
+
+<div class="@(IsSadMode ? "bg-gray-800/80" : "bg-white/80") backdrop-blur-sm p-8 rounded-3xl shadow-xl max-w-md w-full transform transition-all duration-300 hover:scale-105">
+    <h1 class="text-4xl @(IsSadMode ? "sad-font text-gray-400" : "valentine-font text-rose-600") mb-8 @(!IsSadMode ? "animate-bounce" : "")">
+        @(IsSadMode ? "💔 Oh non..." : "❤️ Be Mine ? ❤️")
+    </h1>
+
+    <div class="mb-6">
+        <input type="text" 
+               @bind="name" 
+               @bind:event="oninput"
+               placeholder="Entrez votre nom"
+               class="w-full px-6 py-3 border-2 @(IsSadMode ? "border-gray-600 bg-gray-700 text-gray-300" : "border-pink-300") rounded-full focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent @(IsSadMode ? "sad-font" : "valentine-font") text-lg text-center placeholder:text-pink-300" />
+    </div>
+
+        <div class="flex justify-center space-x-6">
+            <button @onclick="async () => await ShowModal()"
+                class="button-hover bg-gradient-to-r from-rose-400 to-pink-500 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 valentine-font text-xl shadow-lg hover:shadow-pink-300/50">
+                Oui
+            </button>
+            <button @onclick="NoClick"
+                class="button-hover bg-gradient-to-r from-gray-400 to-gray-500 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 valentine-font text-xl shadow-lg"
+                style="position: relative; left: @moveLeft; top: @moveTop">
+                Non
+            </button>
+        </div>
+    </div>
+
+@if (showModal)
+{
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center transition-all duration-300">
+        <div class="@(IsSadMode ? "bg-gray-800/90" : "bg-white/90") p-8 rounded-3xl shadow-xl max-w-md w-full transform transition-all duration-300 scale-up">
+            @if (IsSadMode)
+            {
+                <h2 class="text-3xl sad-font text-center text-gray-400 mb-4">💔 Oh non...</h2>
+                <p class="sad-font text-xl text-center text-gray-300">@(string.IsNullOrEmpty(name) ? "Inconnu(e)" : char.ToUpper(name[0]) + name.Substring(1).ToLower())</p>
+                <p class="mt-4 sad-font text-lg text-center text-gray-400">@GetCustomMessage()</p>
+            }
+            else
+            {
+                <h2 class="text-3xl valentine-font text-center text-rose-600 mb-4">💖 Hourra! 💖</h2>
+                <p class="valentine-font text-xl text-center text-gray-700">Oh ! Mais c'est @(string.IsNullOrEmpty(name) ? "⁉️" : (name?.ToLower() == "kcyp" ? "Cyprien" : char.ToUpper(name[0]) + name?.Substring(1).ToLower())),</p>
+                <p class="mt-4 valentine-font text-lg text-center text-gray-700">@GetCustomMessage()</p>
+            }
+            <div class="text-center mt-6">
+                <button @onclick="CloseModal"
+                    class="button-hover @(IsSadMode ? "bg-gradient-to-r from-gray-600 to-gray-700" : "bg-gradient-to-r from-rose-400 to-pink-500") text-white font-bold py-2 px-6 rounded-full transition-all duration-300 @(IsSadMode ? "sad-font" : "valentine-font")">
+                    @(IsSadMode ? "Je comprends..." : "Fermer")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+</div>
+
+@code {
+    private bool showModal;
+    private bool showSadMode;
+    private bool IsSadMode => showSadMode;
+
+
+    private string moveLeft = "0px";
+    private string moveTop = "0px";
+    private Random random = new Random();
+    private List<(double Left, double Top)> hearts = new();
+
+    private string? _name;
+    private string? name
+    {
+        get => _name;
+        set
+        {
+            _name = value;
+        }
+    }
+
+    private string GetCustomMessage()
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "Mais qui es-tu ? 🤔";
+            
+        return name.ToLower() switch
+        {
+            "agnès" => "Ma développeuse préférée ! \nQu'est-ce que j'ai de la chance !\n🥰❤️",
+            "géraldine" => "Ma développeuse préférée ! \nQu'est-ce que j'ai de la chance ! \n🥰❤️",
+            "kcyp" => "Qu'est-ce que j'en ai de la chance aujourd'hui ! \n😽❤️",
+            _ => "Merci, mais non merci ! \n😅"
+        };
+    }
+
+    private async Task ShowModal()
+    {
+        if (!string.IsNullOrEmpty(name) && 
+            !new[] { "agnès", "géraldine", "kcyp" }.Contains(name.ToLower()))
+        {
+            showModal = true;
+            showSadMode = true;
+            StateHasChanged();
+            await Task.Delay(500);
+        }
+    else
+    {
+        showModal = true;
+        var heartTasks = Enumerable.Range(0, 5).Select(async i =>
+        {
+            await Task.Delay(i * 200);
+            var x = Random.Shared.Next(20, 80);
+            var y = Random.Shared.Next(20, 80);
+            await CreateHeart(x, y);
+        });
+        await Task.WhenAll(heartTasks);
+    }
+}
+    
+
+    private void CloseModal()
+    {
+        showModal = false;
+        showSadMode = false;
+    }
+
+    private void NoClick()
+    {
+        moveLeft = $"{random.Next(-150, 150)}px";
+        moveTop = $"{random.Next(-150, 150)}px";
+    }
+
+private async Task CreateHeart(double clientX, double clientY)
+{
+    try
+    {
+        hearts.Add((clientX, clientY));
+        StateHasChanged();
+        await Task.Delay(2000);
+        if (hearts.Any())
+        {
+            hearts.RemoveAt(0);
+            StateHasChanged();
+        }
+    }
+    catch (Exception)
+    {
+        // Exception handling
+    }
+}
+}
